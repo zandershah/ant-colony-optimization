@@ -20,9 +20,25 @@ Waterloo CS 486 / 686 final project.
 
 ```python
 from aco import AntColony
+from tsp import TSP
 
-colony = AntColony(variation: AntColony.Variation, settings: AntColony.Settings)
-solution: AntColony.Trail = colony.solve(initial_state, successor_fn, goal_fn)
+# TSP Initialization
+cities: List[TSP.City] = [TSP.City('A', 0, 0), TSP.City('B', 1, 1)]
+tsp = TSP(cities)
+
+initial_state = TSP.State(1 << 0, 0)
+
+# Ant Colony Initialization
+variation = AntColony.Variation.ANT_SYSTEM
+
+settings = AntColony.Settings()
+# Modify default settings.
+settings.alpha = 0.5
+
+colony = AntColony(variation, settings)
+
+# Solve using TSP functions.
+solution = colony.solve(initial_state, tsp.successors, tsp.goal)
 
 path = solution.path
 distance = solution.distance
