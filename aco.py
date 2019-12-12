@@ -15,11 +15,12 @@ class AntColony:
 
     @dataclass
     class Settings:
-        alpha: float = 1.0 # Control the influence of pheremone.
-        beta: float = 1.0 # Control the influence of a priori knowledge (inverse distance).
-        rho: float = 0.05 # Pheremone evaporation constant.
-        Q: float = 1 # Pheremone deposited on a path.
-        ants: int = 100 # Number of ants.
+        alpha: float = 0.5 # Control the influence of pheremone.
+        beta: float = 1.2 # Control the influence of a priori knowledge (inverse distance).
+        rho: float = 0.4 # Pheremone evaporation constant.
+        Q: float = 500 # Pheremone deposited on a path.
+        ants: int = 50 # Number of ants.
+        iterations: int = 100
 
 
     class Trail(NamedTuple):
@@ -81,11 +82,11 @@ class AntColony:
     def solve(self, initial_state: Any, successors_fn, goal_fn):
         self.best_solution = AntColony.Trail([], float('inf'))
 
-        for t in range(50): # TODO: Replace with termination criteria.
+        for _ in range(self.settings.iterations):
             trails: List[AntColony.Trail] = []
 
             # TODO: Parallelize.
-            for _ in range(self.settings.ants):
+            for ant in range(self.settings.ants):
                 trail = self._generate_solution(initial_state, successors_fn, goal_fn)
                 trails.append(trail)
 
