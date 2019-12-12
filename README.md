@@ -5,6 +5,30 @@ Implementation of popular variations for the Ant Colony Optimization algorithm i
 
 Waterloo CS 486 / 686 final project.
 
+## Usage
+
+`AntColony` class takes in the desired variation and settings on construction.
+
+`solve(self, initial_state, successor_fn, goal_fn)` implements the algorithm.
+
+- `initial_state`: Arbitrary hashable type `T`, representing the state.
+- `successor_fn`: Maps `T` to `List[Tuple[T, float]]`, representing every possible successor and their corresponding edge weights.
+- `goal_fn`: Maps `T` to `bool`, representing whether the inputted state is a terminal state.
+
+`tsp.py` contains a sample implementation of the required functions to forumate TSP. Uses bitlists to represent the state.
+
+
+```python
+from aco import AntColony
+
+colony = AntColony(variation: AntColony.Variation, settings: AntColony.Settings)
+solution: AntColony.Trail = colony.solve(initial_state, successor_fn, goal_fn)
+
+path = solution.path
+distance = solution.distance
+
+```
+
 ## References
 
 [1] Dorigo, Marco & Maniezzo, Vittorio & Colorni, Alberto. (1996). Ant sytem: Optimization by a colony of cooperating agents. IEEE Transactions on Systems, Man, and Cybernetics-Part B: Cybernetics. 26 (1). 29-41.
