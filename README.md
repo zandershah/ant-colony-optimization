@@ -46,12 +46,12 @@ distance = solution.distance
 ## Variations
 
 ### Elitist Ant System
-- `Settings.elitist` ants with become elitist and always deposit pheromones along the global best solution.
+- `|Settings.elitist|` ants with become elitist and always deposit pheromones along the global best solution.
 - All ants still deposit their pheromones along their paths
 
 ### Max-Min Ant System [7]
 - The amount of pheromones being deposited on a path is bounded by [l<sub>min</sub>, l<sub>max</sub>]
-- Only the best global solution and iteration best solution will deposit pheromones along its path
+- Only the best global solution will deposit pheromones along its path
 - Bounds are generated using a function of the probability of taking the best path as explained in [7]
 
 ### Rank-based Ant System [3]
