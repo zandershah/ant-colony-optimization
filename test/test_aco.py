@@ -73,7 +73,7 @@ class TestACO:
     def test_8(self, instance):
         """Test correctness on a set of 8 city instances.
 
-        Retry up to 3 times for every instance to account for randomness.
+        Retry up to 5 times for every instance to account for randomness.
         """
 
         dataset = f'test/tsp_datasets/8/{instance}'
@@ -81,7 +81,7 @@ class TestACO:
 
         min_dist = float('inf')
 
-        for attempt in range(3):
+        for attempt in range(5):
             _, dist = run_aco(tsp, AntColony.Variation.ANT_SYSTEM, AntColony.Settings())
             min_dist = min(min_dist, dist)
 
