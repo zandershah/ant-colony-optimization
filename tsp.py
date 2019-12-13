@@ -66,18 +66,21 @@ if __name__ == '__main__':
     as_settings = AntColony.Settings()
     eas_settings = AntColony.Settings(elitist=3)
     mmas_settings = AntColony.Settings(infinity=1e5)
-    ras_settings = AntColony.Settings(elitist=5)
+    ras_settings = AntColony.Settings(elitist=10)
  
     as_colony = AntColony(AntColony.Variation.ANT_SYSTEM, as_settings)
     eas_colony = AntColony(AntColony.Variation.ELITIST_ANT_SYSTEM, eas_settings)
     mmas_colony = AntColony(AntColony.Variation.MAXMIN_ANT_SYSTEM, mmas_settings)
     ras_colony = AntColony(AntColony.Variation.RANKBASED_ANT_SYSTEM, ras_settings)
 
-    path, dist = as_colony.solve(initial_state, tsp.successors, tsp.goal)
-    print("Ant System: ", [p.current_node for p in path], dist)
-    path, dist = eas_colony.solve(initial_state, tsp.successors, tsp.goal)
-    print("Elitist Ant System: ", [p.current_node for p in path], dist)
-    path, dist = mmas_colony.solve(initial_state, tsp.successors, tsp.goal)
-    print("Max-Min Ant System: ", [p.current_node for p in path], dist)
     path, dist = ras_colony.solve(initial_state, tsp.successors, tsp.goal)
     print("Rank-based Ant System: ",[p.current_node for p in path], dist)
+
+    path, dist = eas_colony.solve(initial_state, tsp.successors, tsp.goal)
+    print("Elitist Ant System: ", [p.current_node for p in path], dist)
+
+    path, dist = as_colony.solve(initial_state, tsp.successors, tsp.goal)
+    print("Ant System: ", [p.current_node for p in path], dist)
+
+    path, dist = mmas_colony.solve(initial_state, tsp.successors, tsp.goal)
+    print("Max-Min Ant System: ", [p.current_node for p in path], dist)

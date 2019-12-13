@@ -4,6 +4,9 @@ from typing import Dict, Any, List, Tuple, NamedTuple, Optional
 from collections import defaultdict
 from operator import attrgetter
 import numpy as np # type: ignore
+import multiprocessing
+from multiprocessing.pool import ThreadPool
+import itertools
 
 class AntColony:
     class Variation(Enum):
@@ -18,7 +21,7 @@ class AntColony:
         alpha: float = 0.5 # Control the influence of pheromone.
         beta: float = 1.2 # Control the influence of a priori knowledge (inverse distance).
         rho: float = 0.4 # Pheromone evaporation constant.
-        Q: float = 500 # Pheromone deposited on a path.
+        Q: float = 1 # Pheromone deposited on a path.
         elitist: int = 3 # Number of elitist ants for elitist and rank-based ant systems.
         ants: int = 50 # Number of ants.
         iterations: int = 100
@@ -40,7 +43,7 @@ class AntColony:
         self.min_pheromones = 0.0
         self.max_pheromones = self.settings.infinity
 
-        initial_pheromones = settings.Q
+        initial_pheromones = self.settings.Q
         if self.variation == AntColony.Variation.MAXMIN_ANT_SYSTEM:
             initial_pheromones = self.max_pheromones
 
@@ -134,14 +137,13 @@ class AntColony:
     def solve(self, initial_state: Any, successors_fn, goal_fn) -> Trail:
         self.best_solution = AntColony.Trail([], float('inf'))
 
-        for _ in range(self.settings.iterations):
-            trails: List[AntColony.Trail] = []
+        for i in range(self.settings.iterations):
+            pool = ThreadPool(multiprocessing.cpu_count())
+            trails = pool.starmap(self._generate_solution, zip([initial_state] * self.Settings.ants,
+                                                               itertools.repeat(successors_fn),
+                                                               itertools.repeat(goal_fn)))
 
-            # TODO: Parallelize.
-            for ant in range(self.settings.ants):
-                trail = self._generate_solution(initial_state, successors_fn, goal_fn)
-                trails.append(trail)
-
+            for trail in trails:
                 if trail.distance < self.best_solution.distance:
                     self.best_solution = trail
 
@@ -151,6 +153,8 @@ class AntColony:
 
                     self.max_pheromones = 1 / (1 - self.settings.rho) * self.settings.Q / trail.distance
                     self.min_pheromones = self.max_pheromones * (1 - n_root) / (avg - 1) / n_root
+
+                    # print(self.best_solution.distance, ' ', i, '/', self.settings.iterations)
 
             self._update_pheromones(trails)
 
