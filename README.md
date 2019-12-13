@@ -44,6 +44,23 @@ path = solution.path
 distance = solution.distance
 ```
 
+## Variations
+### Ant Colony System
+- Higher preference given to the successor state with shorter distance and higher pheromones
+- Only the best solution (ie. shortest distance) will deposit pheromones along its path
+
+### Elitist Ant System
+- Ant with the best solution becomes an elitist
+- While all ants can deposit their pheromones along their paths, elite ant has a greater influence and deposits more pheromones than normal ants
+
+### Max-Min Ant System
+- The amount of pheromones being deposited on a path is bounds by $[l_{min}, l_{max}]$
+- All paths are initialized with $l_{max}$ to promote exploration
+- Only the best solution will deposit pheromones along its path
+
+### Rank-based Ant System
+- Only the top ranked solutions in terms of distance will deposit pheromones along their paths
+
 ## Tests
 
 Simple 8 and 16 city datasets are provided by Dr. Larson and are originally from Waterloo's CS 486 / 686 assignment test data.

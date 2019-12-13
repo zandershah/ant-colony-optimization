@@ -70,11 +70,14 @@ class AntColony:
     def _daemon_actions(self, trails: List[Trail]) -> None:
         pass 
 
-    def _deposit_pheromones(self, trail, isElitist = False) -> None:
+    def _deposit_pheromones(self, trail, is_elitist = False, is_max_min = False) -> None:
         path, distance = trail
-        amount = self.settings.elitist if isElitist else self.settings.Q
+        amount = self.settings.elitist if is_elitist else self.settings.Q
         for i in range(len(path) - 1):
-            self.pheromones[(path[i], path[i + 1])] += max(self.settings.min_limit, min(self.settings.max_limit, amount / distance))
+            if is_max_min:
+                self.pheromones[(path[i], path[i + 1])] += max(self.settings.min_limit, min(self.settings.max_limit, amount / distance))
+            else:
+                self.pheromones[(path[i], path[i + 1])] += amount / distance
 
     def _update_pheromones(self, trails: List[Trail]) -> None:
         """Update pheromones based on trails.
@@ -100,16 +103,16 @@ class AntColony:
         elif self.variation == self.Variation.ELITIST_ANT_SYSTEM:
             # Every ant's pheromones is deposited
             # Best solution has greater influence so can deposit a greater amount
+            self._deposit_pheromones(self.best_solution, is_elitist = True)
             for t in trails:
                 if t.distance == self.best_solution.distance:
-                    self._deposit_pheromones(t, isElitist = True)
                     continue
                 self._deposit_pheromones(t)
 
         elif self.variation == self.Variation.MAXMIN_ANT_SYSTEM:
             # Only the best ant is allowed to deposit pheromones
             # The amount of pheromones on a path is limited to [max_limit, min_limit]
-            self._deposit_pheromones(self.best_solution)
+            self._deposit_pheromones(self.best_solution, is_max_min = True)
 
         elif self.variation == self.Variation.RANKBASED_ANT_SYSTEM:
             # Only top ranking solutions are allowed to deposit pheromones
