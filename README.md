@@ -42,8 +42,13 @@ solution = colony.solve(initial_state, tsp.successors, tsp.goal)
 
 path = solution.path
 distance = solution.distance
-
 ```
+
+## Tests
+
+Simple 8 and 16 city datasets are provided by Dr. Larson and are originally from Waterloo's CS 486 / 686 assignment test data.
+
+Tests are run with `pytest`.
 
 ## References
 
