@@ -43,7 +43,7 @@ class AntColony:
         self.min_pheromones = 0.0
         self.max_pheromones = self.settings.infinity
 
-        initial_pheromones = self.settings.Q
+        initial_pheromones = 1e-6
         if self.variation == AntColony.Variation.MAXMIN_ANT_SYSTEM:
             initial_pheromones = self.max_pheromones
 
@@ -138,12 +138,12 @@ class AntColony:
         self.best_solution = AntColony.Trail([], float('inf'))
 
         for i in range(self.settings.iterations):
-            pool = ThreadPool(multiprocessing.cpu_count())
-            trails = pool.starmap(self._generate_solution, zip([initial_state] * self.Settings.ants,
-                                                               itertools.repeat(successors_fn),
-                                                               itertools.repeat(goal_fn)))
+            trails: List[AntColony.Trail] = []
 
-            for trail in trails:
+            for ant in range(self.settings.ants):
+                trail = self._generate_solution(initial_state, successors_fn, goal_fn)
+                trails.append(trail)
+
                 if trail.distance < self.best_solution.distance:
                     self.best_solution = trail
 
@@ -154,7 +154,7 @@ class AntColony:
                     self.max_pheromones = 1 / (1 - self.settings.rho) * self.settings.Q / trail.distance
                     self.min_pheromones = self.max_pheromones * (1 - n_root) / (avg - 1) / n_root
 
-                    # print(self.best_solution.distance, ' ', i, '/', self.settings.iterations)
+                    print(self.best_solution.distance, ' ', i, '/', self.settings.iterations)
 
             self._update_pheromones(trails)
 
