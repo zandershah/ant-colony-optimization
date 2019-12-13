@@ -17,7 +17,6 @@ Waterloo CS 486 / 686 final project.
 
 `tsp.py` contains a sample implementation of the required functions to forumate TSP. Uses bitlists to represent the state.
 
-
 ```python
 from aco import AntColony
 from tsp import TSP
@@ -45,21 +44,19 @@ distance = solution.distance
 ```
 
 ## Variations
-### Ant Colony System
-- Higher preference given to the successor state with shorter distance and higher pheromones
-- Only the best solution (ie. shortest distance) will deposit pheromones along its path
 
 ### Elitist Ant System
-- Ant with the best solution becomes an elitist
-- While all ants can deposit their pheromones along their paths, elite ant has a greater influence and deposits more pheromones than normal ants
+- `Settings.elitist` ants with become elitist and always deposit pheromones along the global best solution.
+- All ants still deposit their pheromones along their paths
 
-### Max-Min Ant System
-- The amount of pheromones being deposited on a path is bounds by [l<sub>min</sub>, l<sub>max</sub>]
-- All paths are initialized with l<sub>max</sub> to promote exploration
-- Only the best solution will deposit pheromones along its path
+### Max-Min Ant System [7]
+- The amount of pheromones being deposited on a path is bounded by [l<sub>min</sub>, l<sub>max</sub>]
+- Only the best global solution and iteration best solution will deposit pheromones along its path
+- Bounds are generated using a function of the probability of taking the best path as explained in [7]
 
-### Rank-based Ant System
-- Only the top ranked solutions in terms of distance will deposit pheromones along their paths
+### Rank-based Ant System [3]
+- Only the top `|Settings.elitist|` ranked solutions in terms of distance will deposit pheromones along their paths
+- Pheromones deposited linearly decreases in rank to further promote shorter paths
 
 ## Tests
 
@@ -80,3 +77,5 @@ Tests are run with `pytest`.
 [5] Dorigo, Marco & Socha, Krzysztof. (2006). An Introduction to Ant Colony Optimization.
 
 [6] Bernd, Bullnheimer & Kotsis, Gabriele & Strauss, Christine. (1999). Parallelization Strategies for the Ant System. 10.1007/978-1-4613-3279-4_6.
+
+[7] T. Stützle & H.H. Hoos. (2000). MAX MIN Ant System. Future Generation Computer Systems. 16. 889-914

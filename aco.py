@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Dict, Any, List, Tuple, NamedTuple
+from typing import Dict, Any, List, Tuple, NamedTuple, Optional
 from collections import defaultdict
 from operator import attrgetter
 import numpy as np # type: ignore
@@ -8,7 +8,6 @@ import numpy as np # type: ignore
 class AntColony:
     class Variation(Enum):
         ANT_SYSTEM = auto()
-        ANT_COLONY_SYSTEM = auto()
         ELITIST_ANT_SYSTEM = auto()
         MAXMIN_ANT_SYSTEM = auto()
         RANKBASED_ANT_SYSTEM = auto()
@@ -16,16 +15,15 @@ class AntColony:
 
     @dataclass
     class Settings:
-        alpha: float = 0.5 # Control the influence of pheremone.
+        alpha: float = 0.5 # Control the influence of pheromone.
         beta: float = 1.2 # Control the influence of a priori knowledge (inverse distance).
-        elitist: float = 2.0 # Pheromone deposited by elitist on a path
-        rho: float = 0.4 # Pheremone evaporation constant.
-        Q: float = 500 # Pheremone deposited on a path.
-        max_limit: float = float('inf') # Maximum amount of pheromone on a path
-        min_limit: float = 0 # Minimum amount of pheromone on a path
-        rank_cutoff: int = 3 # Rank cut off for rank-based ant system
-        ants: int = 50 # Number of ants
+        rho: float = 0.4 # Pheromone evaporation constant.
+        Q: float = 500 # Pheromone deposited on a path.
+        elitist: int = 3 # Number of elitist ants for elitist and rank-based ant systems.
+        ants: int = 50 # Number of ants.
         iterations: int = 100
+        infinity: float = 1e9 # Initial value pheromone value for max min ant system.
+        p_best: float = 0.05 # Probability of the best solution being taken at convergence for max min ant system.
 
 
     class Trail(NamedTuple):
@@ -38,8 +36,16 @@ class AntColony:
         self.variation = variation
         self.settings = settings
 
+        # Pheromone limits for max min ant system.
+        self.min_pheromones = 0.0
+        self.max_pheromones = self.settings.infinity
+
+        initial_pheromones = settings.Q
+        if self.variation == AntColony.Variation.MAXMIN_ANT_SYSTEM:
+            initial_pheromones = self.max_pheromones
+
         # Map from edges to amount of pheromone. Edges are given as state tuples.
-        self.pheromones: Dict[Any, float] = defaultdict(lambda: settings.max_limit if variation == self.Variation.MAXMIN_ANT_SYSTEM else settings.Q)
+        self.pheromones: Dict[Any, float] = defaultdict(lambda: initial_pheromones)
 
     def _generate_solution(self, initial_state, successors_fn, goal_fn) -> Trail:
         """Walk an ant through the graph, returning the path and the distance."""
@@ -67,17 +73,24 @@ class AntColony:
 
         return AntColony.Trail(path, distance)
 
-    def _daemon_actions(self, trails: List[Trail]) -> None:
-        pass 
-
-    def _deposit_pheromones(self, trail, is_elitist = False, is_max_min = False) -> None:
+    def _deposit_pheromones(self, trail, is_elitist: bool = False,
+                            rank: Optional[int] = None) -> None:
+        """Deposit pheromones along the path. """
         path, distance = trail
-        amount = self.settings.elitist if is_elitist else self.settings.Q
+
+        amount = self.settings.Q
+
+        if self.variation == AntColony.Variation.ELITIST_ANT_SYSTEM and is_elitist:
+            amount += self.settings.elitist
+        if self.variation == AntColony.Variation.RANKBASED_ANT_SYSTEM and rank is not None:
+            amount *= self.settings.elitist - rank
+
         for i in range(len(path) - 1):
-            if is_max_min:
-                self.pheromones[(path[i], path[i + 1])] += max(self.settings.min_limit, min(self.settings.max_limit, amount / distance))
-            else:
-                self.pheromones[(path[i], path[i + 1])] += amount / distance
+            edge = (path[i], path[i + 1])
+            self.pheromones[edge] += amount / distance
+
+            if self.variation == AntColony.Variation.MAXMIN_ANT_SYSTEM:
+                self.pheromones[edge] = np.clip(self.pheromones[edge], self.min_pheromones, self.max_pheromones)
 
     def _update_pheromones(self, trails: List[Trail]) -> None:
         """Update pheromones based on trails.
@@ -90,37 +103,35 @@ class AntColony:
         for edge in self.pheromones:
             self.pheromones[edge] *= (1 - self.settings.rho)
 
-        # Pheromones deposit
+            if self.variation == AntColony.Variation.MAXMIN_ANT_SYSTEM:
+                self.pheromones[edge] = np.clip(self.pheromones[edge], self.min_pheromones, self.max_pheromones)
+
+        # Pheromones deposit.
         if self.variation == self.Variation.ANT_SYSTEM:
-            # Every ant's phermones is deposited
+            # Every ant's phermones is deposited.
             for t in trails:
                 self._deposit_pheromones(t)
 
-        elif self.variation == self.Variation.ANT_COLONY_SYSTEM:
-            # Only the best ant is allowed to deposit pheromones
-            self._deposit_pheromones(self.best_solution)
-
         elif self.variation == self.Variation.ELITIST_ANT_SYSTEM:
-            # Every ant's pheromones is deposited
-            # Best solution has greater influence so can deposit a greater amount
-            self._deposit_pheromones(self.best_solution, is_elitist = True)
+            # Every ant's pheromones is deposited.
+            # Best solution deposits every iteration |self.settings.elitist| times.
+            self._deposit_pheromones(self.best_solution, is_elitist=True)
             for t in trails:
-                if t.distance == self.best_solution.distance:
-                    continue
                 self._deposit_pheromones(t)
 
         elif self.variation == self.Variation.MAXMIN_ANT_SYSTEM:
-            # Only the best ant is allowed to deposit pheromones
-            # The amount of pheromones on a path is limited to [max_limit, min_limit]
-            self._deposit_pheromones(self.best_solution, is_max_min = True)
+            # Only the best ant is allowed to deposit pheromones. The amount of
+            # pheromones on a path is limited to [min_pheromones, max_pheromones].
+            self._deposit_pheromones(self.best_solution)
 
         elif self.variation == self.Variation.RANKBASED_ANT_SYSTEM:
-            # Only top ranking solutions are allowed to deposit pheromones
+            # Only top |self.settings.elitist| ranking solutions are allowed to
+            # deposit pheromones. Deposit a linearly decreasing amount.
             sorted_trails = sorted(trails, key=attrgetter('distance'))
-            for r in range(self.settings.rank_cutoff):
-                self._deposit_pheromones(sorted_trails[r])
+            for r in range(self.settings.elitist):
+                self._deposit_pheromones(sorted_trails[r], rank=r)
 
-    def solve(self, initial_state: Any, successors_fn, goal_fn):
+    def solve(self, initial_state: Any, successors_fn, goal_fn) -> Trail:
         self.best_solution = AntColony.Trail([], float('inf'))
 
         for _ in range(self.settings.iterations):
@@ -134,7 +145,13 @@ class AntColony:
                 if trail.distance < self.best_solution.distance:
                     self.best_solution = trail
 
-            self._daemon_actions(trails)
+                    # Update bounds for max min ant system.
+                    n_root = pow(self.settings.p_best, 1 / len(trail.path))
+                    avg = len(trail.path) / 2
+
+                    self.max_pheromones = 1 / (1 - self.settings.rho) * self.settings.Q / trail.distance
+                    self.min_pheromones = self.max_pheromones * (1 - n_root) / (avg - 1) / n_root
+
             self._update_pheromones(trails)
 
         return self.best_solution
