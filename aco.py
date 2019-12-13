@@ -34,7 +34,7 @@ class AntColony:
         self.settings = settings
 
         # Map from edges to amount of pheremone. Edges are given as state tuples.
-        self.pheremones: Dict[Any, float] = defaultdict(lambda: settings.Q)
+        self.pheremones: Dict[Any, float] = defaultdict(lambda: self.settings.Q)
 
     def _generate_solution(self, initial_state, successors_fn, goal_fn) -> Trail:
         """Walk an ant through the graph, returning the path and the distance."""

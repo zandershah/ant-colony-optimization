@@ -52,7 +52,6 @@ class TSP:
         dy = self.cities[u].y - self.cities[v].y
         return math.sqrt(dx * dx + dy * dy)
 
-# TODO: Move to unittests.
 if __name__ == '__main__':
     n = int(input())
 
